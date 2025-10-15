@@ -1,0 +1,2 @@
+# ShiftTips
+tip splitting app
