@@ -1,11 +1,18 @@
 import { Handler } from '@netlify/functions';
 
-// TODO: Add your Whop API key to Netlify environment variables as WHOP_API_KEY
-// TODO: Add your Whop product ID to Netlify environment variables as WHOP_PRODUCT_ID
 const WHOP_API_KEY = process.env.WHOP_API_KEY;
 const WHOP_PRODUCT_ID = process.env.WHOP_PRODUCT_ID;
 
 export const handler: Handler = async (event) => {
+  const response = {
+    statusCode: 500,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    },
+    body: ''
+  };
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -26,13 +33,13 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const { userId } = JSON.parse(event.body || '{}');
+    const { userId, licenseKey } = JSON.parse(event.body || '{}');
 
-    if (!userId) {
+    if (!userId && !licenseKey) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'User ID required' }),
+        body: JSON.stringify({ error: 'Either User ID or License Key required' }),
       };
     }
 
@@ -45,9 +52,27 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Verify the user has access to the product via Whop API
-    const response = await fetch(
-      `https://api.whop.com/api/v5/memberships?user_id=${userId}&plan=${WHOP_PRODUCT_ID}`,
+    let response;
+    
+    if (licenseKey) {
+      // Verify using license key
+      response = await fetch(
+        'https://api.whop.com/api/v5/licenses/validate',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WHOP_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            key: licenseKey
+          })
+        }
+      );
+    } else {
+      // Verify using user ID
+      response = await fetch(
+        `https://api.whop.com/api/v5/memberships?user_id=${userId}&plan=${WHOP_PRODUCT_ID}`,
       {
         headers: {
           'Authorization': `Bearer ${WHOP_API_KEY}`,

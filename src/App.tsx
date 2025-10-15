@@ -38,6 +38,8 @@ function App() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [presetName, setPresetName] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [licenseKey, setLicenseKey] = useState('');
+  const [licenseError, setLicenseError] = useState('');
 
   useEffect(() => {
     // Check for Whop success redirect
@@ -217,12 +219,50 @@ function App() {
                   <li>• One-time payment, yours forever</li>
                 </ul>
                 {!isProUser && (
-                  <a
-                    href={WHOP_CHECKOUT_URL}
-                    className="block w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition text-center"
-                  >
-                    Unlock Pro for $19
-                  </a>
+                  <>
+                    <a
+                      href={WHOP_CHECKOUT_URL}
+                      className="block w-full bg-white text-indigo-600 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition text-center mb-4"
+                    >
+                      Unlock Pro for $19
+                    </a>
+                    <div className="text-white/90 text-center mb-4">- or -</div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={licenseKey}
+                        onChange={(e) => setLicenseKey(e.target.value)}
+                        placeholder="Enter license key"
+                        className="block w-full bg-white text-gray-900 py-3 px-6 rounded-lg focus:outline-none"
+                      />
+                      {licenseError && (
+                        <div className="text-red-200 text-sm">{licenseError}</div>
+                      )}
+                      <button
+                        onClick={() => {
+                          setVerifying(true);
+                          setLicenseError('');
+                          verifyProPurchase(licenseKey)
+                            .then(success => {
+                              setVerifying(false);
+                              if (success) {
+                                setIsProUser(true);
+                              } else {
+                                setLicenseError('Invalid license key');
+                              }
+                            })
+                            .catch(() => {
+                              setVerifying(false);
+                              setLicenseError('Error verifying license key');
+                            });
+                        }}
+                        disabled={!licenseKey.trim() || verifying}
+                        className="block w-full bg-white/20 text-white font-bold py-3 px-6 rounded-lg hover:bg-white/30 transition text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {verifying ? 'Verifying...' : 'Activate with License Key'}
+                      </button>
+                    </div>
+                  </>
                 )}
                 {isProUser && (
                   <div className="bg-white/20 py-3 px-6 rounded-lg text-center font-semibold">

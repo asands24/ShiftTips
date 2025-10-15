@@ -1,9 +1,8 @@
-// TODO: Replace with your Whop checkout URL
-// Create a product on Whop and get the checkout URL
-export const WHOP_CHECKOUT_URL = 'https://whop.com/YOUR_PRODUCT_LINK';
+// Whop checkout URL
+export const WHOP_CHECKOUT_URL = 'https://whop.com/s-s-technologies/shifttips/';
 
-// TODO: Replace with your Whop product/plan ID
-export const WHOP_PRODUCT_ID = 'prod_YOUR_PRODUCT_ID';
+// Whop product ID from environment variables
+export const WHOP_PRODUCT_ID = import.meta.env.WHOP_PRODUCT_ID;
 
 const PRO_KEY = 'shifttips_pro';
 const PRESETS_KEY = 'shifttips_presets';
@@ -51,24 +50,24 @@ export function deletePreset(id: string): void {
   localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
 }
 
-export async function verifyProPurchase(userId: string): Promise<boolean> {
-  try {
-    const response = await fetch('/.netlify/functions/verify-whop', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    });
+export function verifyProPurchase(userIdOrLicenseKey: string): Promise<boolean> {
+  const isLicenseKey = userIdOrLicenseKey.includes('-');
+  const payload = isLicenseKey ? { licenseKey: userIdOrLicenseKey } : { userId: userIdOrLicenseKey };
 
-    const data = await response.json();
-
-    if (data.success) {
-      unlockPro();
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error('Error verifying purchase:', error);
-    return false;
-  }
+  return fetch('/.netlify/functions/verify-whop', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        unlockPro();
+        return true;
+      }
+      return false;
+    })
+    .catch(() => false);
 }
