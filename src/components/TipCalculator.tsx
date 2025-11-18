@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './TipCalculator.css';
 
 interface CalculationResult {
+  tipAmount: number;
+  totalAmount: number;
   tipPerPerson: number;
   totalPerPerson: number;
-  totalTip: number;
-  totalAmount: number;
 }
 
 const TipCalculator: React.FC = () => {
@@ -15,10 +15,10 @@ const TipCalculator: React.FC = () => {
   const [numberOfPeople, setNumberOfPeople] = useState<string>('1');
   const [isCustom, setIsCustom] = useState<boolean>(false);
   const [result, setResult] = useState<CalculationResult>({
+    tipAmount: 0,
+    totalAmount: 0,
     tipPerPerson: 0,
     totalPerPerson: 0,
-    totalTip: 0,
-    totalAmount: 0,
   });
 
   const predefinedTips = [15, 18, 20];
@@ -29,39 +29,39 @@ const TipCalculator: React.FC = () => {
 
   const calculateTip = () => {
     const bill = parseFloat(billAmount) || 0;
-    const people = parseInt(numberOfPeople) || 1;
     const tip = tipPercentage || 0;
+    const people = parseInt(numberOfPeople) || 1;
 
     if (bill > 0 && people > 0) {
-      const totalTip = (bill * tip) / 100;
-      const totalAmount = bill + totalTip;
-      const tipPerPerson = totalTip / people;
+      const tipAmount = (bill * tip) / 100;
+      const totalAmount = bill + tipAmount;
+      const tipPerPerson = tipAmount / people;
       const totalPerPerson = totalAmount / people;
 
       setResult({
+        tipAmount,
+        totalAmount,
         tipPerPerson,
         totalPerPerson,
-        totalTip,
-        totalAmount,
       });
     } else {
       setResult({
+        tipAmount: 0,
+        totalAmount: 0,
         tipPerPerson: 0,
         totalPerPerson: 0,
-        totalTip: 0,
-        totalAmount: 0,
       });
     }
   };
 
-  const handleBillAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
       setBillAmount(value);
     }
   };
 
-  const handleTipSelection = (percentage: number) => {
+  const handleTipSelect = (percentage: number) => {
     setTipPercentage(percentage);
     setIsCustom(false);
     setCustomTip('');
@@ -69,23 +69,21 @@ const TipCalculator: React.FC = () => {
 
   const handleCustomTipClick = () => {
     setIsCustom(true);
-    if (customTip) {
-      setTipPercentage(parseFloat(customTip) || 0);
-    }
   };
 
   const handleCustomTipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
       setCustomTip(value);
-      setTipPercentage(parseFloat(value) || 0);
+      const tipValue = parseFloat(value) || 0;
+      setTipPercentage(tipValue);
     }
   };
 
-  const handleNumberOfPeopleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePeopleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || /^\d+$/.test(value)) {
-      setNumberOfPeople(value || '1');
+      setNumberOfPeople(value);
     }
   };
 
@@ -96,10 +94,10 @@ const TipCalculator: React.FC = () => {
     setNumberOfPeople('1');
     setIsCustom(false);
     setResult({
+      tipAmount: 0,
+      totalAmount: 0,
       tipPerPerson: 0,
       totalPerPerson: 0,
-      totalTip: 0,
-      totalAmount: 0,
     });
   };
 
@@ -110,7 +108,7 @@ const TipCalculator: React.FC = () => {
   return (
     <div className="tip-calculator">
       <div className="calculator-container">
-        <h1 className="calculator-title">Tip Calculator</h1>
+        <h1 className="title">Tip Calculator</h1>
 
         <div className="input-section">
           <div className="input-group">
@@ -123,27 +121,27 @@ const TipCalculator: React.FC = () => {
                 inputMode="decimal"
                 placeholder="0.00"
                 value={billAmount}
-                onChange={handleBillAmountChange}
+                onChange={handleBillChange}
                 className="input-field"
               />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Select Tip Percentage</label>
+            <label>Select Tip %</label>
             <div className="tip-buttons">
-              {predefinedTips.map((percentage) => (
+              {predefinedTips.map((tip) => (
                 <button
-                  key={percentage}
-                  onClick={() => handleTipSelection(percentage)}
-                  className={`tip-button ${!isCustom && tipPercentage === percentage ? 'active' : ''}`}
+                  key={tip}
+                  className={`tip-button ${!isCustom && tipPercentage === tip ? 'active' : ''}`}
+                  onClick={() => handleTipSelect(tip)}
                 >
-                  {percentage}%
+                  {tip}%
                 </button>
               ))}
               <button
-                onClick={handleCustomTipClick}
                 className={`tip-button ${isCustom ? 'active' : ''}`}
+                onClick={handleCustomTipClick}
               >
                 Custom
               </button>
@@ -158,7 +156,6 @@ const TipCalculator: React.FC = () => {
                   onChange={handleCustomTipChange}
                   className="input-field"
                 />
-                <span className="percentage-symbol">%</span>
               </div>
             )}
           </div>
@@ -173,7 +170,7 @@ const TipCalculator: React.FC = () => {
                 inputMode="numeric"
                 placeholder="1"
                 value={numberOfPeople}
-                onChange={handleNumberOfPeopleChange}
+                onChange={handlePeopleChange}
                 className="input-field"
                 min="1"
               />
@@ -182,32 +179,32 @@ const TipCalculator: React.FC = () => {
         </div>
 
         <div className="results-section">
-          <h2 className="results-title">Results</h2>
+          <h2 className="results-title">Summary</h2>
           
-          <div className="result-grid">
-            <div className="result-card highlight">
-              <div className="result-label">Tip Per Person</div>
-              <div className="result-value">${formatCurrency(result.tipPerPerson)}</div>
-            </div>
+          <div className="result-row">
+            <span className="result-label">Tip Amount:</span>
+            <span className="result-value">${formatCurrency(result.tipAmount)}</span>
+          </div>
 
-            <div className="result-card highlight">
-              <div className="result-label">Total Per Person</div>
-              <div className="result-value">${formatCurrency(result.totalPerPerson)}</div>
-            </div>
+          <div className="result-row">
+            <span className="result-label">Total Amount:</span>
+            <span className="result-value">${formatCurrency(result.totalAmount)}</span>
+          </div>
 
-            <div className="result-card">
-              <div className="result-label">Total Tip</div>
-              <div className="result-value">${formatCurrency(result.totalTip)}</div>
-            </div>
+          <div className="divider"></div>
 
-            <div className="result-card">
-              <div className="result-label">Total Amount</div>
-              <div className="result-value">${formatCurrency(result.totalAmount)}</div>
-            </div>
+          <div className="result-row highlight">
+            <span className="result-label">Tip per Person:</span>
+            <span className="result-value">${formatCurrency(result.tipPerPerson)}</span>
+          </div>
+
+          <div className="result-row highlight">
+            <span className="result-label">Total per Person:</span>
+            <span className="result-value total">${formatCurrency(result.totalPerPerson)}</span>
           </div>
         </div>
 
-        <button onClick={handleReset} className="reset-button">
+        <button className="reset-button" onClick={handleReset}>
           Reset Calculator
         </button>
       </div>
