@@ -1,60 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import './TipCalculator.css';
 
 interface TipCalculatorState {
   billAmount: string;
   tipPercentage: number;
-  customTip: string;
   numberOfPeople: string;
+  customTip: string;
 }
 
 const TipCalculator: React.FC = () => {
   const [state, setState] = useState<TipCalculatorState>({
     billAmount: '',
     tipPercentage: 15,
-    customTip: '',
     numberOfPeople: '1',
+    customTip: '',
   });
 
-  const [results, setResults] = useState({
-    tipPerPerson: 0,
-    totalPerPerson: 0,
-    totalTip: 0,
-    totalAmount: 0,
-  });
+  const [isCustomTip, setIsCustomTip] = useState(false);
 
-  const [isCustom, setIsCustom] = useState(false);
-
-  useEffect(() => {
-    calculateTip();
-  }, [state]);
-
-  const calculateTip = () => {
-    const bill = parseFloat(state.billAmount) || 0;
-    const tip = isCustom ? parseFloat(state.customTip) || 0 : state.tipPercentage;
-    const people = parseInt(state.numberOfPeople) || 1;
-
-    if (bill > 0 && people > 0) {
-      const tipAmount = (bill * tip) / 100;
-      const total = bill + tipAmount;
-      const tipPerPerson = tipAmount / people;
-      const totalPerPerson = total / people;
-
-      setResults({
-        tipPerPerson: parseFloat(tipPerPerson.toFixed(2)),
-        totalPerPerson: parseFloat(totalPerPerson.toFixed(2)),
-        totalTip: parseFloat(tipAmount.toFixed(2)),
-        totalAmount: parseFloat(total.toFixed(2)),
-      });
-    } else {
-      setResults({
-        tipPerPerson: 0,
-        totalPerPerson: 0,
-        totalTip: 0,
-        totalAmount: 0,
-      });
-    }
-  };
+  const tipPercentages = [5, 10, 15, 20, 25];
 
   const handleBillAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -64,18 +27,15 @@ const TipCalculator: React.FC = () => {
   };
 
   const handleTipPercentageClick = (percentage: number) => {
-    setIsCustom(false);
     setState({ ...state, tipPercentage: percentage, customTip: '' });
-  };
-
-  const handleCustomTipClick = () => {
-    setIsCustom(true);
+    setIsCustomTip(false);
   };
 
   const handleCustomTipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
-      setState({ ...state, customTip: value });
+      setState({ ...state, customTip: value, tipPercentage: parseFloat(value) || 0 });
+      setIsCustomTip(true);
     }
   };
 
@@ -86,119 +46,186 @@ const TipCalculator: React.FC = () => {
     }
   };
 
+  const calculateTip = (): number => {
+    const bill = parseFloat(state.billAmount) || 0;
+    const tip = state.tipPercentage || 0;
+    return (bill * tip) / 100;
+  };
+
+  const calculateTotal = (): number => {
+    const bill = parseFloat(state.billAmount) || 0;
+    return bill + calculateTip();
+  };
+
+  const calculatePerPerson = (): number => {
+    const people = parseInt(state.numberOfPeople) || 1;
+    return calculateTotal() / people;
+  };
+
+  const calculateTipPerPerson = (): number => {
+    const people = parseInt(state.numberOfPeople) || 1;
+    return calculateTip() / people;
+  };
+
   const handleReset = () => {
     setState({
       billAmount: '',
       tipPercentage: 15,
-      customTip: '',
       numberOfPeople: '1',
+      customTip: '',
     });
-    setIsCustom(false);
+    setIsCustomTip(false);
   };
 
-  const tipPercentages = [15, 18, 20];
-
   return (
-    <div className="tip-calculator">
-      <div className="calculator-card">
-        <h1 className="title">Tip Calculator</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-8 sm:px-8 sm:py-10">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center tracking-tight">
+            💰 Tip Calculator
+          </h1>
+          <p className="text-purple-100 text-center mt-2 text-sm sm:text-base">
+            Calculate tips and split bills with ease
+          </p>
+        </div>
 
-        <div className="input-section">
-          <label className="input-label">
-            <span>Bill Amount</span>
-            <div className="input-wrapper">
-              <span className="currency-symbol">$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={state.billAmount}
-                onChange={handleBillAmountChange}
-                className="input-field bill-input"
-              />
-            </div>
-          </label>
+        <div className="p-6 sm:p-8 lg:p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
+            {/* Input Section */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Bill Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-lg">
+                    $
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={state.billAmount}
+                    onChange={handleBillAmountChange}
+                    placeholder="0.00"
+                    className="w-full pl-10 pr-4 py-4 text-lg font-semibold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 hover:border-gray-300"
+                  />
+                </div>
+              </div>
 
-          <div className="tip-section">
-            <span className="input-label">Select Tip %</span>
-            <div className="tip-buttons">
-              {tipPercentages.map((percentage) => (
-                <button
-                  key={percentage}
-                  className={`tip-button ${
-                    !isCustom && state.tipPercentage === percentage ? 'active' : ''
-                  }`}
-                  onClick={() => handleTipPercentageClick(percentage)}
-                >
-                  {percentage}%
-                </button>
-              ))}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Tip %
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {tipPercentages.map((percentage) => (
+                    <button
+                      key={percentage}
+                      onClick={() => handleTipPercentageClick(percentage)}
+                      className={`py-3 px-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 ${
+                        state.tipPercentage === percentage && !isCustomTip
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {percentage}%
+                    </button>
+                  ))}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={state.customTip}
+                    onChange={handleCustomTipChange}
+                    placeholder="Custom"
+                    className={`py-3 px-4 rounded-xl font-bold text-lg text-center border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                      isCustomTip
+                        ? 'border-purple-600 bg-purple-50'
+                        : 'border-gray-200 bg-gray-100 hover:border-gray-300'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Number of People
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-lg">
+                    👥
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={state.numberOfPeople}
+                    onChange={handleNumberOfPeopleChange}
+                    placeholder="1"
+                    className="w-full pl-12 pr-4 py-4 text-lg font-semibold border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 hover:border-gray-300"
+                  />
+                </div>
+              </div>
+
               <button
-                className={`tip-button ${isCustom ? 'active' : ''}`}
-                onClick={handleCustomTipClick}
+                onClick={handleReset}
+                className="w-full py-3 px-6 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
               >
-                Custom
+                Reset
               </button>
             </div>
-            {isCustom && (
-              <div className="custom-tip-input">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Enter custom %"
-                  value={state.customTip}
-                  onChange={handleCustomTipChange}
-                  className="input-field"
-                  autoFocus
-                />
+
+            {/* Results Section */}
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border-2 border-purple-100">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-4 border-b border-purple-200">
+                    <div>
+                      <p className="text-sm text-gray-600 font-medium">Tip Amount</p>
+                      <p className="text-xs text-gray-500 mt-1">Per person</p>
+                    </div>
+                    <p className="text-2xl sm:text-3xl font-bold text-purple-700">
+                      ${calculateTipPerPerson().toFixed(2)}
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 shadow-lg transform transition-all duration-200 hover:shadow-xl">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm text-purple-100 font-medium">Total Per Person</p>
+                        <p className="text-xs text-purple-200 mt-1">Including tip</p>
+                      </div>
+                      <p className="text-3xl sm:text-4xl font-bold text-white">
+                        ${calculatePerPerson().toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
 
-          <label className="input-label">
-            <span>Number of People</span>
-            <div className="input-wrapper">
-              <span className="currency-symbol">👥</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1"
-                value={state.numberOfPeople}
-                onChange={handleNumberOfPeopleChange}
-                className="input-field"
-                min="1"
-              />
-            </div>
-          </label>
-        </div>
-
-        <div className="results-section">
-          <div className="result-card">
-            <div className="result-row">
-              <span className="result-label">Tip per Person</span>
-              <span className="result-value">${results.tipPerPerson.toFixed(2)}</span>
-            </div>
-            <div className="result-row">
-              <span className="result-label">Total per Person</span>
-              <span className="result-value highlight">
-                ${results.totalPerPerson.toFixed(2)}
-              </span>
-            </div>
-            <div className="result-divider"></div>
-            <div className="result-row">
-              <span className="result-label">Total Tip</span>
-              <span className="result-value">${results.totalTip.toFixed(2)}</span>
-            </div>
-            <div className="result-row">
-              <span className="result-label">Total Amount</span>
-              <span className="result-value">${results.totalAmount.toFixed(2)}</span>
+              <div className="bg-gray-50 rounded-2xl p-6 space-y-3">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Summary</h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Subtotal:</span>
+                  <span className="text-gray-900 font-bold text-lg">
+                    ${parseFloat(state.billAmount || '0').toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium">Total Tip ({state.tipPercentage}%):</span>
+                  <span className="text-purple-700 font-bold text-lg">
+                    ${calculateTip().toFixed(2)}
+                  </span>
+                </div>
+                <div className="border-t-2 border-gray-200 pt-3 mt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-800 font-bold text-lg">Grand Total:</span>
+                    <span className="text-gray-900 font-bold text-xl">
+                      ${calculateTotal().toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        <button className="reset-button" onClick={handleReset}>
-          Reset
-        </button>
       </div>
     </div>
   );
